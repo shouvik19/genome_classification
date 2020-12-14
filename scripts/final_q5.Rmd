@@ -1,0 +1,179 @@
+
+  
+```{r}
+library('lattice') 
+library("plyr") 
+library('np')
+```
+
+#### load data
+```{r}
+training_data <- read.delim('geno_train.txt', sep=',', header=T)
+testing_data <- read.delim('geno_test.txt', sep=',', header=T)
+```
+
+
+## (a)
+### Plotting the 15 plots, I could manage it with par(mfrow=c(4,5), mar = c(2,2,1,1)) 
+```{r}
+par(mfrow=c(4,5), mar = c(2,2,1,1))
+plot(density(training_data[training_data$population=='Hispanic',]$D8S1179), main='D8S1179', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D8S1179), col='red')
+lines(density(training_data[training_data$population=='African American',]$D8S1179), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D21S11), main='D21S11', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D21S11), col='red')
+lines(density(training_data[training_data$population=='African American',]$D21S11), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D7S820), main='D7S820', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D7S820), col='red')
+lines(density(training_data[training_data$population=='African American',]$D7S820), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$CSF1PO), main='CSF1PO', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$CSF1PO), col='red')
+lines(density(training_data[training_data$population=='African American',]$CSF1PO), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D3S1358), main='D3S1358', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D3S1358), col='red')
+lines(density(training_data[training_data$population=='African American',]$D3S1358), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$TH01), main='TH01', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$TH01), col='red')
+lines(density(training_data[training_data$population=='African American',]$TH01), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D13S317), main='D13S317', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D13S317), col='red')
+lines(density(training_data[training_data$population=='African American',]$D13S317), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D16S539), main='D16S539', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D16S539), col='red')
+lines(density(training_data[training_data$population=='African American',]$D16S539), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D2S1338), main='D2S1338', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D2S1338), col='red')
+lines(density(training_data[training_data$population=='African American',]$D2S1338), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D19S433), main='D19S433', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D19S433), col='red')
+lines(density(training_data[training_data$population=='African American',]$D19S433), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$vWA), main='vWA', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$vWA), col='red')
+lines(density(training_data[training_data$population=='African American',]$vWA), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$TPOX), main='TPOX', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$TPOX), col='red')
+lines(density(training_data[training_data$population=='African American',]$TPOX), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D18S51), main='D18S51', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D18S51), col='red')
+lines(density(training_data[training_data$population=='African American',]$D18S51), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$D5S818), main='D5S818', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$D5S818), col='red')
+lines(density(training_data[training_data$population=='African American',]$D5S818), col='blue')
+
+plot(density(training_data[training_data$population=='Hispanic',]$FGA), main='FGA', col='green')
+lines(density(training_data[training_data$population=='Caucasian',]$FGA), col='red')
+lines(density(training_data[training_data$population=='African American',]$FGA), col='blue')
+
+
+plot(5, type = "n", axes=FALSE, xlab="", ylab="")
+legend(x = "top",inset = 0,
+        legend = c("Hispanic", "Caucasian", "African American"), col=c('green', 'red', 'blue'), lwd=5, cex=.5, horiz = FALSE)
+
+```
+
+
+
+## (b)
+
+##### LDA
+```{r}
+library('MASS')
+model_lda <- lda(population ~ ., data=training_data)
+pred_lda <- predict(model_lda, testing_data[,-16])$class
+```
+
+#### Printing the model summary
+```{r}
+model_lda
+```
+
+### LDA Misclassification rate
+```{r}
+lda_misclassification <- (sum(pred_lda!=testing_data$population)/ length(testing_data$population))*100 
+lda_misclassification
+```
+### We get misclassification of 34.911 %
+
+##### SVM for classification
+```{r}
+library('e1071')
+training_data$population<-as.factor(training_data$population)
+svm_classfication <- svm(population~ ., data=training_data, scale = TRUE,type = "C-classification")
+pred_svm_classfication <- predict(svm_classfication, testing_data[,-16])
+```
+
+### Model Summary
+```{r}
+summary(svm_classfication)
+```
+### Misclassification
+```{r}
+svm_misclassification <- (sum(pred_svm_classfication!=testing_data$population)/ length(testing_data$population))*100 
+svm_misclassification
+```
+### We get misclassification of 30.1775 %
+
+## (c)
+
+##### PCA
+```{r}
+gene_pr_model <- prcomp(training_data[,-16], center = TRUE, scale = TRUE)
+summary(gene_pr_model)
+```
+
+
+#### In our dataset we have our top three Principal components can explain 26.8% of the variance in the data. We will go with that.
+
+```{r}
+gene_pc_mod <- data.frame(gene_pr_model$x[,1:3])
+gene_pc_mod <- cbind(gene_pc_mod, training_data$population)
+colnames(gene_pc_mod)[4] <- "population"
+```
+
+
+```{r}
+pca_testing <- data.frame(predict(gene_pr_model, testing_data[,-16])[, 1:3])
+```
+
+```{r}
+pc_lda_model <- lda(population ~ ., data = gene_pc_mod)
+pc_lda_predictions <- predict(pc_lda_model, newdata = pca_testing)$class
+```
+
+
+```{r}
+pc_lda_mis <- (sum(pc_lda_predictions!=testing_data$population)/ length(testing_data$population))*100 
+pc_lda_mis
+```
+### We get misclassification of 33.72781 %
+
+```{r}
+svm_model_pc <- svm(population~ ., data=gene_pc_mod)
+svm_pred <- predict(svm_model_pc, pca_testing)
+```
+
+
+```{r}
+pc_svm_mis <- (sum(svm_pred!=testing_data$population)/ length(testing_data$population))*100 
+pc_svm_mis
+```
+### We get misclassification of 32.54438 %
+
+
+
+
+
+
